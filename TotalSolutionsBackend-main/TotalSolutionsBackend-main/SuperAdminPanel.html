@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Superadmin Panel</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 2rem auto;
+      }
+      .panel {
+        border: 1px solid #ccc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+      }
+      input,
+      select {
+        margin: 5px 0;
+        width: 100%;
+        padding: 6px;
+      }
+      button {
+        margin-top: 10px;
+      }
+      .msg {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Superadmin Panel</h2>
+
+    <div class="panel">
+      <h3>Add Centre</h3>
+      <form id="centreForm">
+        <input name="name" placeholder="Name" required /><br />
+        <input name="address" placeholder="Address" required /><br />
+        <input name="city" placeholder="City" required /><br />
+        <input name="state" placeholder="State" required /><br />
+        <input name="pincode" placeholder="Pincode" type="number" required /><br />
+        <input name="contactNumber" placeholder="Contact Number" type="number" required /><br />
+        <button type="submit">Add Centre</button>
+      </form>
+      <div id="centreMsg" class="msg"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Add Admin</h3>
+      <form id="adminForm">
+        <!-- <select name="centreId" required>
+          <option value="">Select Centre</option></select><br /> -->
+          <input name="centreId" placeholder="Centre ID" type="text" required /><br />
+        <input name="name" placeholder="Name" required /><br />
+        <input name="mobilenumber" placeholder="Mobile Number" type="number" required /><br />
+        <input name="email" placeholder="Email" type="email" required /><br />
+        <input
+          name="password"
+          placeholder="Password"
+          type="password"
+          required
+        /><br />
+        <button type="submit">Add Admin</button>
+      </form>
+      <div id="adminMsg" class="msg"></div>
+    </div>
+
+    <script>
+    //const API_BASE = "http://localhost:4001/api";
+    const API_BASE = "https://totalapi.joywithlearning.com/api";
+
+      // Populate centres dropdown
+      function loadCentres() {
+        fetch(API_BASE + "/data/allcentres")
+          .then((res) => res.json())
+          .then((data) => {
+            const select = document.querySelector('select[name="centreId"]');
+            select.innerHTML = '<option value="">Select Centre</option>';
+            (data.centres || []).forEach((c) => {
+              const opt = document.createElement("option");
+              opt.value = c._id;
+              opt.textContent = `${c.name} (${c.city})`;
+              select.appendChild(opt);
+            });
+          });
+      }
+      loadCentres();
+
+      // Add Centre
+      document.getElementById("centreForm").onsubmit = function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = Object.fromEntries(new FormData(form));
+        fetch(API_BASE + "/superadmin/addCentre", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("centreMsg").textContent =
+              data.message || (data.success ? "Centre added!" : "Error");
+            if (data.success) {
+              form.reset();
+              loadCentres();
+            }
+          });
+      };
+
+      // Add Admin
+      document.getElementById("adminForm").onsubmit = function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = Object.fromEntries(new FormData(form));
+        // Convert mobilenumber, if present, to number
+        if (data.mobilenumber) data.mobilenumber = Number(data.mobilenumber);
+        fetch(API_BASE + "/superadmin/addAdmin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+          .then((res) => res.json().then((j) => ({ status: res.status, ...j })))
+          .then((data) => {
+            document.getElementById("adminMsg").textContent =
+              data.message || (data.success ? "Admin added!" : "Error");
+            if (data.status === 201) form.reset();
+          });
+      };
+    </script>
+  </body>
+</html>

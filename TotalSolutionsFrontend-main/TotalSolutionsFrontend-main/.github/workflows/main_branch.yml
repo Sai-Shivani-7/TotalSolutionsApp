@@ -1,0 +1,23 @@
+name: Trigger Total Org Build
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main  
+
+jobs:
+  trigger-build:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'testing'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger total solutions repo build
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PATOKEN }}" \
+            https://api.github.com/repos/TechForAutismDyslexia/totalorgbuild/actions/workflows/build.yml/dispatches \
+            -d '{"ref":"main","inputs": {
+                "reponame": "root"
+              }}'

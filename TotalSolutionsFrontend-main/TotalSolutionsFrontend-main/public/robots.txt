@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /services
+Allow: /register
+Disallow: /admindashboard/
+Disallow: /doctordashboard/
+Disallow: /therapistdashboard/
+Disallow: /parentdashboard/
+
+Sitemap: https://totalsolutionforlearning.org/sitemap.xml

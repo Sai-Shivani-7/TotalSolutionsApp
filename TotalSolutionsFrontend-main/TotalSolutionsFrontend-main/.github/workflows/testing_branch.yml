@@ -1,0 +1,22 @@
+name: Trigger Test Total Org Build
+
+on:
+  push:
+    branches:
+      - testing  
+
+jobs:
+  trigger-build:
+    runs-on: ubuntu-latest
+    # 🔑 ONLY run if commit message contains [deploy-test]
+    if: contains(github.event.head_commit.message, '[deploy-test]')
+    steps:
+      - name: Trigger test (.io) repo build
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PATOKEN }}" \
+            https://api.github.com/repos/TechForAutismDyslexia/techforautismdyslexia.github.io/actions/workflows/build.yml/dispatches \
+            -d '{"ref":"main","inputs": {
+                "reponame": "root"
+              }}'

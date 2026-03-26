@@ -1,0 +1,41 @@
+.timeline-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: auto;
+    position: relative;
+    border-left: 4px solid #ccc;
+  }
+  
+  .timeline-item {
+    position: relative;
+    margin-left: 2rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    opacity: 0;
+    transform: translateX(50px);
+    animation: slideInRight 0.6s ease forwards;
+  }
+  
+  .timeline-icon {
+    position: absolute;
+    left: -2.4rem;
+    top: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    background: #666;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 2rem;
+    font-size: 1rem;
+  }
+  
+  @keyframes slideInRight {
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
