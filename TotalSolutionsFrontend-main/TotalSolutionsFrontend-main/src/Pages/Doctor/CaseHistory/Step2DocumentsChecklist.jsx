@@ -1,9 +1,11 @@
-export default function Step2DocumentsChecklist({ formData, updateFormData }) {
+export default function Step2DocumentsChecklist({ formData, updateFormData, readOnly = false }) {
   const handleCheckboxChange = (name) => {
+    if (readOnly) return;
     updateFormData(name, !formData[name]);
   };
 
   const handleChange = (e) => {
+    if (readOnly) return;
     const { name, value } = e.target;
     updateFormData(name, value);
   };
@@ -38,6 +40,7 @@ export default function Step2DocumentsChecklist({ formData, updateFormData }) {
                   type="checkbox"
                   checked={formData[key]}
                   onChange={() => handleCheckboxChange(key)}
+                  disabled={readOnly}
                   className="w-5 h-5 text-[#ab1c1c] rounded border-gray-300 focus:ring-[#ab1c1c]"
                 />
                 <span className="text-sm font-medium text-gray-700">
@@ -57,6 +60,7 @@ export default function Step2DocumentsChecklist({ formData, updateFormData }) {
                     name="parentConcernsText"
                     value={formData.parentConcernsText}
                     onChange={handleChange}
+                    disabled={readOnly}
                     rows={3}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                     placeholder="Describe parent concerns..."

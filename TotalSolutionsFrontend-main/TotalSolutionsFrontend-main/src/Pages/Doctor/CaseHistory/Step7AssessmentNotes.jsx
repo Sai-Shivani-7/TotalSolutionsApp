@@ -1,7 +1,8 @@
-export default function Step7AssessmentNotes({ formData, updateFormData }) {
+export default function Step7AssessmentNotes({ formData, updateFormData, readOnly = false }) {
   const data = formData.assessmentNotes;
 
   const handleFieldChange = (field, value) => {
+    if (readOnly) return;
     updateFormData("assessmentNotes", (prev) => ({
       ...prev,
       [field]: value,
@@ -35,6 +36,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
                   onChange={(e) =>
                     handleFieldChange("cylinderResult", e.target.value)
                   }
+                  disabled={readOnly}
                   className="w-4 h-4 text-[#ab1c1c] focus:ring-[#ab1c1c]"
                 />
                 <span className="text-sm text-green-700">Correct</span>
@@ -48,6 +50,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
                   onChange={(e) =>
                     handleFieldChange("cylinderResult", e.target.value)
                   }
+                  disabled={readOnly}
                   className="w-4 h-4 text-[#ab1c1c] focus:ring-[#ab1c1c]"
                 />
                 <span className="text-sm text-red-700">Incorrect</span>
@@ -69,8 +72,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
                   checked={data.cubeResult === "correct"}
                   onChange={(e) =>
                     handleFieldChange("cubeResult", e.target.value)
-                  }
-                  className="w-4 h-4 text-[#ab1c1c] focus:ring-[#ab1c1c]"
+                  }                  disabled={readOnly}                  className="w-4 h-4 text-[#ab1c1c] focus:ring-[#ab1c1c]"
                 />
                 <span className="text-sm text-green-700">Correct</span>
               </label>
@@ -82,8 +84,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
                   checked={data.cubeResult === "incorrect"}
                   onChange={(e) =>
                     handleFieldChange("cubeResult", e.target.value)
-                  }
-                  className="w-4 h-4 text-[#ab1c1c] focus:ring-[#ab1c1c]"
+                  }                  disabled={readOnly}                  className="w-4 h-4 text-[#ab1c1c] focus:ring-[#ab1c1c]"
                 />
                 <span className="text-sm text-red-700">Incorrect</span>
               </label>
@@ -101,6 +102,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
               onChange={(e) =>
                 handleFieldChange("rectangleResponse", e.target.value)
               }
+              disabled={readOnly}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
               placeholder="Describe the child's response to the rectangle"
             />
@@ -116,6 +118,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
         <textarea
           value={data.therapistNotes}
           onChange={(e) => handleFieldChange("therapistNotes", e.target.value)}
+          disabled={readOnly}
           rows={4}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
           placeholder="Enter therapist notes and observations..."
@@ -130,6 +133,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
         <textarea
           value={data.observationNotes}
           onChange={(e) => handleFieldChange("observationNotes", e.target.value)}
+          disabled={readOnly}
           rows={4}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
           placeholder="Enter observation notes..."
@@ -145,6 +149,7 @@ export default function Step7AssessmentNotes({ formData, updateFormData }) {
           type="date"
           value={data.assessmentDate}
           onChange={(e) => handleFieldChange("assessmentDate", e.target.value)}
+          disabled={readOnly}
           className="w-full md:w-64 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
         />
       </div>

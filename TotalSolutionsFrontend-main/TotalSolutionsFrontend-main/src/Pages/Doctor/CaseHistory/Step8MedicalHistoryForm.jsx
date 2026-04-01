@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import DrawingCanvas from "./DrawingCanvas";
 
-export default function Step8MedicalHistoryForm({ formData, updateFormData, selectedChild }) {
+export default function Step8MedicalHistoryForm({ formData, updateFormData, selectedChild, readOnly = false }) {
   const data = formData.medicalHistory || {
     generalHistory: "",
     prenatalHistory: "",
@@ -167,6 +167,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
   };
 
   const handleChange = (e) => {
+    if (readOnly) return;
     updateFormData("medicalHistory", {
       ...data,
       [e.target.name]: e.target.value,
@@ -199,6 +200,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           name="generalHistory"
           value={data.generalHistory || ""}
           onChange={handleChange}
+          disabled={readOnly}
           rows="4"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter general history notes here..."
@@ -213,6 +215,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
             </div>
             <button
               onClick={() => setShowGeneralCanvas((v) => !v)}
+              disabled={readOnly}
               className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
                 showGeneralCanvas
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -225,7 +228,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
               {showGeneralCanvas ? "Hide Canvas" : "Draw Diagram"}
             </button>
           </div>
-          {showGeneralCanvas && (
+          {showGeneralCanvas && !readOnly && (
             <DrawingCanvas
               ref={generalCanvasRef}
               title="General Family Diagram"
@@ -243,6 +246,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           name="prenatalHistory"
           value={data.prenatalHistory || ""}
           onChange={handleChange}
+          disabled={readOnly}
           rows="4"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter details here..."
@@ -257,6 +261,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
             </div>
             <button
               onClick={() => setShowPrenatalCanvas((v) => !v)}
+              disabled={readOnly}
               className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
                 showPrenatalCanvas
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -269,7 +274,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
               {showPrenatalCanvas ? "Hide Canvas" : "Draw Diagram"}
             </button>
           </div>
-          {showPrenatalCanvas && (
+          {showPrenatalCanvas && !readOnly && (
             <DrawingCanvas
               ref={prenatalCanvasRef}
               title="Pre-natal Diagram"
@@ -287,6 +292,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           name="natalHistory"
           value={data.natalHistory || ""}
           onChange={handleChange}
+          disabled={readOnly}
           rows="4"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter details here..."
@@ -301,6 +307,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
             </div>
             <button
               onClick={() => setShowNatalCanvas((v) => !v)}
+              disabled={readOnly}
               className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
                 showNatalCanvas
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -313,7 +320,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
               {showNatalCanvas ? "Hide Canvas" : "Draw Diagram"}
             </button>
           </div>
-          {showNatalCanvas && (
+          {showNatalCanvas && !readOnly && (
             <DrawingCanvas
               ref={natalCanvasRef}
               title="Natal Diagram"
@@ -331,6 +338,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           name="postnatalHistory"
           value={data.postnatalHistory || ""}
           onChange={handleChange}
+          disabled={readOnly}
           rows="4"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter details here..."
@@ -345,6 +353,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
             </div>
             <button
               onClick={() => setShowPostnatalCanvas((v) => !v)}
+              disabled={readOnly}
               className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
                 showPostnatalCanvas
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -357,7 +366,7 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
               {showPostnatalCanvas ? "Hide Canvas" : "Draw Diagram"}
             </button>
           </div>
-          {showPostnatalCanvas && (
+          {showPostnatalCanvas && !readOnly && (
             <DrawingCanvas
               ref={postnatalCanvasRef}
               title="Post-natal Diagram"

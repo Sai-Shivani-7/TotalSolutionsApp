@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 
-export default function Step5TrialExamination({ formData, updateFormData }) {
+export default function Step5TrialExamination({ formData, updateFormData, readOnly = false }) {
   const data = formData.trialExamination;
 
   const handleFieldChange = (field, value) => {
+    if (readOnly) return;
     updateFormData("trialExamination", (prev) => ({
       ...prev,
       [field]: value,
@@ -11,6 +12,7 @@ export default function Step5TrialExamination({ formData, updateFormData }) {
   };
 
   const handleTrialChange = (index, field, value) => {
+    if (readOnly) return;
     updateFormData("trialExamination", (prev) => {
       const updated = { ...prev };
       const trials = [...updated.trials];
@@ -56,6 +58,7 @@ export default function Step5TrialExamination({ formData, updateFormData }) {
           type="text"
           value={data.targetBehaviour}
           onChange={(e) => handleFieldChange("targetBehaviour", e.target.value)}
+          disabled={readOnly}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
           placeholder="Describe the target behaviour"
         />
@@ -93,6 +96,7 @@ export default function Step5TrialExamination({ formData, updateFormData }) {
                       onChange={(e) =>
                         handleTrialChange(index, "promptUsed", e.target.value)
                       }
+                      disabled={readOnly}
                       className="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                       placeholder="Prompt used"
                     />
@@ -104,6 +108,7 @@ export default function Step5TrialExamination({ formData, updateFormData }) {
                       onChange={(e) =>
                         handleTrialChange(index, "maxScore", e.target.value)
                       }
+                      disabled={readOnly}
                       className="w-full p-1.5 border border-gray-300 rounded text-center focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                       placeholder="Max"
                     />
@@ -115,6 +120,7 @@ export default function Step5TrialExamination({ formData, updateFormData }) {
                       onChange={(e) =>
                         handleTrialChange(index, "achievedScore", e.target.value)
                       }
+                      disabled={readOnly}
                       className="w-full p-1.5 border border-gray-300 rounded text-center focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                       placeholder="Achieved"
                     />

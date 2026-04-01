@@ -1,7 +1,8 @@
-export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
+export default function Step3IncreasingBehaviour({ formData, updateFormData, readOnly = false }) {
   const data = formData.increasingBehaviour;
 
   const handleFieldChange = (field, value) => {
+    if (readOnly) return;
     updateFormData("increasingBehaviour", (prev) => ({
       ...prev,
       [field]: value,
@@ -42,6 +43,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
             type="text"
             value={data.longTermGoal}
             onChange={(e) => handleFieldChange("longTermGoal", e.target.value)}
+            disabled={readOnly}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
             placeholder="Enter long term goal"
           />
@@ -67,6 +69,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
+                        disabled={readOnly}
                         className="w-4 h-4 text-[#ab1c1c] rounded focus:ring-[#ab1c1c]"
                       />
                       <input
@@ -75,6 +78,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
                         onChange={(e) =>
                           handleGoalChange(index, "text", e.target.value)
                         }
+                        disabled={readOnly}
                         className="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                         placeholder={`Concern ${index + 1}`}
                       />
@@ -87,6 +91,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
                       onChange={(e) =>
                         handleGoalChange(index, "month1", e.target.value)
                       }
+                      disabled={readOnly}
                       className="w-full p-1.5 border border-gray-300 rounded text-center focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                     />
                   </td>
@@ -97,6 +102,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
                       onChange={(e) =>
                         handleGoalChange(index, "month2", e.target.value)
                       }
+                      disabled={readOnly}
                       className="w-full p-1.5 border border-gray-300 rounded text-center focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                     />
                   </td>
@@ -107,6 +113,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
                       onChange={(e) =>
                         handleGoalChange(index, "month3", e.target.value)
                       }
+                      disabled={readOnly}
                       className="w-full p-1.5 border border-gray-300 rounded text-center focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
                     />
                   </td>
@@ -139,6 +146,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
         <textarea
           value={data.methodsUsed}
           onChange={(e) => handleFieldChange("methodsUsed", e.target.value)}
+          disabled={readOnly}
           rows={2}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
           placeholder="Describe methods used..."
@@ -155,6 +163,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
           onChange={(e) =>
             handleFieldChange("parentalInvolvement", e.target.value)
           }
+          disabled={readOnly}
           rows={2}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
           placeholder="Describe parental involvement..."
@@ -166,6 +175,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
         <label className="flex items-center gap-3">
           <input
             type="checkbox"
+            disabled={readOnly}
             className="w-4 h-4 text-[#ab1c1c] rounded focus:ring-[#ab1c1c]"
           />
           <span className="text-sm text-gray-700">
@@ -174,8 +184,7 @@ export default function Step3IncreasingBehaviour({ formData, updateFormData }) {
         </label>
         <textarea
           value={data.overallFeedback}
-          onChange={(e) => handleFieldChange("overallFeedback", e.target.value)}
-          rows={2}
+          onChange={(e) => handleFieldChange("overallFeedback", e.target.value)}          disabled={readOnly}          rows={2}
           className="w-full mt-2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
           placeholder="Feedback..."
         />

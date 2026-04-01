@@ -246,13 +246,85 @@ export default function CaseHistoryWizard() {
     }
   };
 
+  const loadHistoryIntoForm = (history) => {
+    if (!history) return;
+
+    const demo = history.demographics || {};
+    const docs = history.documentsChecklist || {};
+
+    setFormData({
+      ...initialFormData,
+      childName: demo.childName || "",
+      dob: demo.dob || "",
+      dateOfJoining: demo.dateOfJoining || "",
+      therapistName: demo.therapistName || "",
+      centre: demo.centre || "",
+      fatherName: demo.fatherName || "",
+      fatherPhone: demo.fatherPhone || "",
+      fatherWhatsApp: demo.fatherWhatsApp || "",
+      fatherEmail: demo.fatherEmail || "",
+      motherName: demo.motherName || "",
+      motherPhone: demo.motherPhone || "",
+      motherWhatsApp: demo.motherWhatsApp || "",
+      motherEmail: demo.motherEmail || "",
+      address: demo.address || "",
+      preTherapyVideoRef: demo.preTherapyVideoRef || "",
+      newTherapyAdded: demo.newTherapyAdded || "",
+      newTherapyDate: demo.newTherapyDate || "",
+      newTherapistName: demo.newTherapistName || "",
+      therapyStarted: demo.therapyStarted || initialFormData.therapyStarted,
+
+      consultationPaper: docs.consultationPaper || false,
+      previousMedicalDocs: docs.previousMedicalDocs || false,
+      testReports: docs.testReports || false,
+      consentForm: docs.consentForm || false,
+      parentConcerns: docs.parentConcerns || false,
+      parentConcernsText: docs.parentConcernsText || "",
+      therapyChange: docs.therapyChange || false,
+      therapistChange: docs.therapistChange || false,
+      foodAllergy: docs.foodAllergy || false,
+
+      increasingBehaviour:
+        history.increasingBehaviourPlan || initialFormData.increasingBehaviour,
+      decreasingBehaviour:
+        history.decreasingBehaviourPlan || initialFormData.decreasingBehaviour,
+      trialExamination:
+        history.trialExamination || initialFormData.trialExamination,
+      visualShapes: history.visualShapes || initialFormData.visualShapes,
+      assessmentNotes:
+        history.assessmentNotes || initialFormData.assessmentNotes,
+      medicalHistory:
+        history.medicalHistory || initialFormData.medicalHistory,
+    });
+  };
+
   // ─── Load a saved history into the wizard ─────────────────────────────────
   const handleViewHistory = (history) => {
     setReadOnlyHistory(history);
     setCurrentStep(0);
     setVisitedSteps(new Set([0]));
+    loadHistoryIntoForm(history);
     toast.info("Viewing previous case history in read-only mode.");
   };
+
+  const handleAddCaseHistory = () => {
+    setReadOnlyHistory(null);
+    setFormData(initialFormData);
+    setCurrentStep(0);
+    setVisitedSteps(new Set([0]));
+    toast.info("Fill the form to add a new case history.");
+  };
+
+  const isReadOnlyMode = !!readOnlyHistory;
+
+  const formatYesNo = (value) => (value ? "Yes" : "No");
+
+  const renderReadOnlyRow = (label, value) => (
+    <div className="grid grid-cols-[150px_1fr] gap-2 border-b border-gray-100 py-1">
+      <span className="text-xs font-semibold text-gray-600">{label}</span>
+      <span className="text-xs text-gray-800">{value || "-"}</span>
+    </div>
+  );
 
   // ─── PDF generation ───────────────────────────────────────────────────────
   const handleGeneratePDF = (history) => {
@@ -613,41 +685,43 @@ export default function CaseHistoryWizard() {
 
         {selectedChild ? (
           <>
-            {readOnlyHistory ? (
-              <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                  Read-only Case History: {readOnlyHistory?.demographics?.childName || selectedChild?.name}
-                </h3>
-                <div className="mb-3">
-                  <strong>Date:</strong> {readOnlyHistory?.createdAt ? new Date(readOnlyHistory.createdAt).toLocaleString() : "Unknown"}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-                  <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                    <h4 className="font-semibold mb-1">Demographics</h4>
-                    <div>Child: {readOnlyHistory.demographics?.childName}</div>
-                    <div>DOB: {readOnlyHistory.demographics?.dob}</div>
-                    <div>Therapist: {readOnlyHistory.demographics?.therapistName}</div>
-                    <div>Centre: {readOnlyHistory.demographics?.centre}</div>
-                    <div>Address: {readOnlyHistory.demographics?.address}</div>
+            {isReadOnlyMode && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-800">Read-only mode is active.</p>
+                    <p className="text-xs text-yellow-700">Navigate through the 8-step form. Values are non-editable.</p>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                    <h4 className="font-semibold mb-1">Medical History</h4>
-                    <div>General: {readOnlyHistory.medicalHistory?.generalHistory || "-"}</div>
-                    <div>Pre-natal: {readOnlyHistory.medicalHistory?.prenatalHistory || "-"}</div>
-                    <div>Natal: {readOnlyHistory.medicalHistory?.natalHistory || "-"}</div>
-                    <div>Post-natal: {readOnlyHistory.medicalHistory?.postnatalHistory || "-"}</div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <button onClick={() => setReadOnlyHistory(null)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                  <button
+                    onClick={handleAddCaseHistory}
+                    className="text-xs px-3 py-1.5 bg-[#ab1c1c] text-white rounded hover:bg-[#8e1818]"
+                  >
                     Add New Case History
                   </button>
                 </div>
               </div>
-            ) : null}
+            )}
 
             {/* ── Past case histories ── */}
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {savedHistories.map((h, idx) => (
+                  <button
+                    key={h._id || idx}
+                    onClick={() => handleViewHistory(h)}
+                    className={`text-xs px-3 py-1.5 rounded-full border ${readOnlyHistory?._id === h._id ? "border-[#ab1c1c] bg-[#ab1c1c] text-white" : "border-gray-300 text-gray-700 hover:bg-gray-100"}`}
+                  >
+                    CaseHistory {idx + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={handleAddCaseHistory}
+                  className="text-xs px-3 py-1.5 rounded-full bg-[#ab1c1c] text-white hover:bg-[#8e1818]"
+                >
+                  Add Case History
+                </button>
+              </div>
+
               <h3 className="text-sm font-semibold text-gray-700 mb-3">
                 Past Case Histories for {selectedChild.name}
               </h3>
@@ -693,7 +767,7 @@ export default function CaseHistoryWizard() {
               )}
             </div>
 
-            {!readOnlyHistory && (
+            {true && (
               <>
                 {/* ── Step Indicator ── */}
                 <div className="mb-6">
@@ -745,6 +819,7 @@ export default function CaseHistoryWizard() {
                     formData={formData}
                     updateFormData={updateFormData}
                     selectedChild={selectedChild}
+                    readOnly={isReadOnlyMode}
                   />
                 </div>
 
@@ -774,12 +849,18 @@ export default function CaseHistoryWizard() {
                     Next →
                   </button>
                 ) : (
-                  <button onClick={handleSave} disabled={isSaving}
-                    className={`px-4 sm:px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
-                      isSaving ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
-                    {isSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                    {isSaving ? "Saving..." : "Save"}
-                  </button>
+                  isReadOnlyMode ? (
+                    <button onClick={handleAddCaseHistory} className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                      Exit Read-only
+                    </button>
+                  ) : (
+                    <button onClick={handleSave} disabled={isSaving}
+                      className={`px-4 sm:px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
+                        isSaving ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
+                      {isSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                      {isSaving ? "Saving..." : "Save"}
+                    </button>
+                  )
                 )}
               </div>
             </div>
