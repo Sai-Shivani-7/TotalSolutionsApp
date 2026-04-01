@@ -3,6 +3,8 @@ import DrawingCanvas from "./DrawingCanvas";
 
 export default function Step8MedicalHistoryForm({ formData, updateFormData, selectedChild, readOnly = false }) {
   const data = formData.medicalHistory || {
+    presentingComplaints: "",
+    referredBy: "",
     generalHistory: "",
     prenatalHistory: "",
     natalHistory: "",
@@ -11,22 +13,13 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
 
   // Drawing canvas refs
   const generalCanvasRef = useRef(null);
-  const prenatalCanvasRef = useRef(null);
-  const natalCanvasRef = useRef(null);
-  const postnatalCanvasRef = useRef(null);
 
   // Canvas visibility toggles
   const [showGeneralCanvas, setShowGeneralCanvas] = useState(false);
-  const [showPrenatalCanvas, setShowPrenatalCanvas] = useState(false);
-  const [showNatalCanvas, setShowNatalCanvas] = useState(false);
-  const [showPostnatalCanvas, setShowPostnatalCanvas] = useState(false);
 
   // Saved drawing paths
   const [savedDrawings, setSavedDrawings] = useState({
     general: null,
-    prenatal: null,
-    natal: null,
-    postnatal: null,
   });
 
   const handleSaveDrawing = useCallback((key, paths) => {
@@ -38,35 +31,11 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
     const sections = [
       {
         key: "general",
-        sectionTitle: "General History",
+        sectionTitle: "Pedigree Chart",
         noteField: "generalHistory",
-        diagramLabel: "General Family Diagram",
+        diagramLabel: "Pedigree Diagram",
         ref: generalCanvasRef,
         show: showGeneralCanvas,
-      },
-      {
-        key: "prenatal",
-        sectionTitle: "Pre-natal History",
-        noteField: "prenatalHistory",
-        diagramLabel: "Pre-natal Diagram",
-        ref: prenatalCanvasRef,
-        show: showPrenatalCanvas,
-      },
-      {
-        key: "natal",
-        sectionTitle: "Natal History",
-        noteField: "natalHistory",
-        diagramLabel: "Natal Diagram",
-        ref: natalCanvasRef,
-        show: showNatalCanvas,
-      },
-      {
-        key: "postnatal",
-        sectionTitle: "Post-natal History",
-        noteField: "postnatalHistory",
-        diagramLabel: "Post-natal Diagram",
-        ref: postnatalCanvasRef,
-        show: showPostnatalCanvas,
       },
     ];
 
@@ -192,10 +161,46 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
         </button>
       </div>
 
-      {/* ========== General History ========== */}
+      {/* ========== Presenting Complaints ========== */}
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-1">General History</label>
-        <p className="text-xs text-gray-500 mb-2">General observations, family background, and relevant notes.</p>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Presenting Complaints</label>
+        <p className="text-xs text-gray-500 mb-2">Chief complaint or reason for referral.</p>
+        <textarea
+          name="presentingComplaints"
+          value={data.presentingComplaints || ""}
+          onChange={handleChange}
+          disabled={readOnly}
+          rows="3"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
+          placeholder="Enter presenting complaints here..."
+        ></textarea>
+      </div>
+
+      {/* ========== Who Referred By ========== */}
+      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Who Referred By</label>
+        <p className="text-xs text-gray-500 mb-2">Source of referral for this case.</p>
+        <select
+          name="referredBy"
+          value={data.referredBy || ""}
+          onChange={handleChange}
+          disabled={readOnly}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
+        >
+          <option value="">-- Select Referral Source --</option>
+          <option value="Doctor">Doctor</option>
+          <option value="Parents">Parents</option>
+          <option value="School">School</option>
+          <option value="Other Therapist">Other Therapist</option>
+          <option value="Self Referral">Self Referral</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      {/* ========== Pedigree Chart ========== */}
+      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Pedigree Chart</label>
+        <p className="text-xs text-gray-500 mb-2">Family tree, genetic information, and family background.</p>
         <textarea
           name="generalHistory"
           value={data.generalHistory || ""}
@@ -251,37 +256,6 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter details here..."
         ></textarea>
-
-        {/* Pre-natal Diagram */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h4 className="text-md font-medium text-gray-700">Pre-natal Diagram</h4>
-              <p className="text-xs text-gray-500">Draw observations related to pregnancy history.</p>
-            </div>
-            <button
-              onClick={() => setShowPrenatalCanvas((v) => !v)}
-              disabled={readOnly}
-              className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
-                showPrenatalCanvas
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  : "bg-[#ab1c1c] text-white hover:bg-[#8e1818]"
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              {showPrenatalCanvas ? "Hide Canvas" : "Draw Diagram"}
-            </button>
-          </div>
-          {showPrenatalCanvas && !readOnly && (
-            <DrawingCanvas
-              ref={prenatalCanvasRef}
-              title="Pre-natal Diagram"
-              onSave={(paths) => handleSaveDrawing("prenatal", paths)}
-            />
-          )}
-        </div>
       </div>
 
       {/* Natal History */}
@@ -297,37 +271,6 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter details here..."
         ></textarea>
-
-        {/* Natal Diagram */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h4 className="text-md font-medium text-gray-700">Natal Diagram</h4>
-              <p className="text-xs text-gray-500">Draw observations related to birth conditions.</p>
-            </div>
-            <button
-              onClick={() => setShowNatalCanvas((v) => !v)}
-              disabled={readOnly}
-              className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
-                showNatalCanvas
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  : "bg-[#ab1c1c] text-white hover:bg-[#8e1818]"
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              {showNatalCanvas ? "Hide Canvas" : "Draw Diagram"}
-            </button>
-          </div>
-          {showNatalCanvas && !readOnly && (
-            <DrawingCanvas
-              ref={natalCanvasRef}
-              title="Natal Diagram"
-              onSave={(paths) => handleSaveDrawing("natal", paths)}
-            />
-          )}
-        </div>
       </div>
 
       {/* Post-natal History */}
@@ -343,37 +286,6 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
           placeholder="Enter details here..."
         ></textarea>
-
-        {/* Post-natal Diagram */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h4 className="text-md font-medium text-gray-700">Post-natal Diagram</h4>
-              <p className="text-xs text-gray-500">Draw observations related to post-birth development.</p>
-            </div>
-            <button
-              onClick={() => setShowPostnatalCanvas((v) => !v)}
-              disabled={readOnly}
-              className={`px-4 py-2 font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm ${
-                showPostnatalCanvas
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  : "bg-[#ab1c1c] text-white hover:bg-[#8e1818]"
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              {showPostnatalCanvas ? "Hide Canvas" : "Draw Diagram"}
-            </button>
-          </div>
-          {showPostnatalCanvas && !readOnly && (
-            <DrawingCanvas
-              ref={postnatalCanvasRef}
-              title="Post-natal Diagram"
-              onSave={(paths) => handleSaveDrawing("postnatal", paths)}
-            />
-          )}
-        </div>
       </div>
 
     </div>

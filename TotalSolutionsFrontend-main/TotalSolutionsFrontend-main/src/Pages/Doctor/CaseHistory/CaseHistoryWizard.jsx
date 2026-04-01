@@ -16,13 +16,13 @@ import Step8MedicalHistoryForm from "./Step8MedicalHistoryForm";
 
 const STEPS = [
   { label: "Child Demographics",   shortLabel: "Demographics",       component: Step1Demographics },
+  { label: "Demographic Details",  shortLabel: "Demographic Details", component: Step8MedicalHistoryForm },
+  { label: "Screening Drawing Test", shortLabel: "Screening Test",   component: Step6ScreeningDrawingTest },
+  { label: "Assessment Notes",     shortLabel: "Assessment",         component: Step7AssessmentNotes },
   { label: "Documents Checklist",  shortLabel: "Documents",          component: Step2DocumentsChecklist },
   { label: "Increasing Behaviour", shortLabel: "IBP+",               component: Step3IncreasingBehaviour },
   { label: "Decreasing Behaviour", shortLabel: "IBP−",               component: Step4DecreasingBehaviour },
   { label: "Trial Examination",    shortLabel: "Trials",             component: Step5TrialExamination },
-  { label: "Screening Drawing Test", shortLabel: "Screening Test",   component: Step6ScreeningDrawingTest },
-  { label: "Assessment Notes",     shortLabel: "Assessment",         component: Step7AssessmentNotes },
-  { label: "Demographic Details",  shortLabel: "Demographic Details", component: Step8MedicalHistoryForm },
 ];
 
 const initialFormData = {
@@ -36,10 +36,14 @@ const initialFormData = {
   fatherPhone: "",
   fatherWhatsApp: "",
   fatherEmail: "",
+  fatherOccupation: "",
+  fatherQualifications: "",
   motherName: "",
   motherPhone: "",
   motherWhatsApp: "",
   motherEmail: "",
+  motherOccupation: "",
+  motherQualifications: "",
   address: "",
   preTherapyVideoRef: "",
   newTherapyAdded: "",
@@ -108,11 +112,14 @@ const initialFormData = {
     rectangleResponse: "",
     therapistNotes: "",
     observationNotes: "",
+    recommendations: "",
     assessmentDate: "",
   },
 
   // Step 8
   medicalHistory: {
+    presentingComplaints: "",
+    referredBy: "",
     generalHistory: "",
     prenatalHistory: "",
     natalHistory: "",

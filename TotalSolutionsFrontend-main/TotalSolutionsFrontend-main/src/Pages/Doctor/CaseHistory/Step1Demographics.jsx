@@ -1,4 +1,15 @@
-export default function Step1Demographics({ formData, updateFormData, readOnly = false }) {
+export default function Step1Demographics({ formData, updateFormData, readOnly = false, selectedChild }) {
+
+  const calculateAge = (dobString) => {
+    if (!dobString) return "";
+    const dob = new Date(dobString);
+    const now = new Date();
+    let years = now.getFullYear() - dob.getFullYear();
+    let months = now.getMonth() - dob.getMonth();
+    if (months < 0) { years--; months += 12; }
+    if (years > 0) return `${years} yr${years > 1 ? "s" : ""} ${months} mo`;
+    return `${months} mo`;
+  };
 
   const handleChange = (e) => {
     if (readOnly) return;
@@ -37,9 +48,12 @@ export default function Step1Demographics({ formData, updateFormData, readOnly =
             <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
             <input type="date" name="dob" value={formData.dob} onChange={handleChange} disabled={readOnly}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" />
+            {formData.dob && (
+              <p className="text-xs text-gray-600 mt-1"><strong>Age:</strong> {calculateAge(formData.dob)}</p>
+            )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date of Joining</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date of Meeting</label>
             <input type="date" name="dateOfJoining" value={formData.dateOfJoining} onChange={handleChange} disabled={readOnly}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" />
           </div>
@@ -49,13 +63,13 @@ export default function Step1Demographics({ formData, updateFormData, readOnly =
             <label className="block text-sm font-medium text-gray-700 mb-1">Therapist Name</label>
             <input type="text" name="therapistName" value={formData.therapistName} onChange={handleChange} disabled={readOnly}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
-              placeholder="Therapist name" />
+              placeholder="Therapist name (on the day of therapy)" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Centre</label>
             <input type="text" name="centre" value={formData.centre || ""} onChange={handleChange} disabled={readOnly}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
-              placeholder="Centre / clinic name" />
+              placeholder="Centre / clinic name (on the day of therapy)" />
           </div>
         </div>
       </div>
@@ -127,6 +141,18 @@ export default function Step1Demographics({ formData, updateFormData, readOnly =
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" placeholder="Email address" />
           </div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Father Occupation</label>
+            <input type="text" name="fatherOccupation" value={formData.fatherOccupation || ""} onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" placeholder="Occupation" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Father Qualifications</label>
+            <input type="text" name="fatherQualifications" value={formData.fatherQualifications || ""} onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" placeholder="Qualifications / Education" />
+          </div>
+        </div>
       </div>
 
       {/* Mother Details */}
@@ -156,6 +182,18 @@ export default function Step1Demographics({ formData, updateFormData, readOnly =
             <label className="block text-sm font-medium text-gray-700 mb-1">Mother Email</label>
             <input type="email" name="motherEmail" value={formData.motherEmail} onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" placeholder="Email address" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mother Occupation</label>
+            <input type="text" name="motherOccupation" value={formData.motherOccupation || ""} onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" placeholder="Occupation" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mother Qualifications</label>
+            <input type="text" name="motherQualifications" value={formData.motherQualifications || ""} onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none" placeholder="Qualifications / Education" />
           </div>
         </div>
       </div>

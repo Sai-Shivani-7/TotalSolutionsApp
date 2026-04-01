@@ -140,6 +140,21 @@ export default function Step7AssessmentNotes({ formData, updateFormData, readOnl
         />
       </div>
 
+      {/* Recommendations */}
+      <div className="border border-gray-200 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-semibold text-[#ab1c1c] mb-3">
+          Recommendations
+        </h3>
+        <textarea
+          value={data.recommendations}
+          onChange={(e) => handleFieldChange("recommendations", e.target.value)}
+          disabled={readOnly}
+          rows={4}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none"
+          placeholder="Enter recommendations for therapy and follow-up..."
+        />
+      </div>
+
       {/* Assessment Date */}
       <div className="border border-gray-200 rounded-lg p-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">
