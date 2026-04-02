@@ -132,9 +132,8 @@ const caseHistorySchema = new mongoose.Schema(
       presentingComplaints: String,
       referredBy: String,
       generalHistory: String,
-      prenatalHistory: String,
-      natalHistory: String,
-      postnatalHistory: String,
+      pregnancyHistory: String,
+      pedigreeDrawingImage: String,
     },
     createdAt: {
       type: Date,

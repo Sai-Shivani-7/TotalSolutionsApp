@@ -6,9 +6,8 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
     presentingComplaints: "",
     referredBy: "",
     generalHistory: "",
-    prenatalHistory: "",
-    natalHistory: "",
-    postnatalHistory: "",
+    pregnancyHistory: "",
+    pedigreeDrawingImage: "",
   };
 
   // Drawing canvas refs
@@ -24,7 +23,25 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
 
   const handleSaveDrawing = useCallback((key, paths) => {
     setSavedDrawings((prev) => ({ ...prev, [key]: paths }));
-  }, []);
+
+    if (key === "general") {
+      (async () => {
+        if (generalCanvasRef.current) {
+          try {
+            const dataUrl = await generalCanvasRef.current.getImage();
+            if (dataUrl) {
+              updateFormData("medicalHistory", (prev) => ({
+                ...prev,
+                pedigreeDrawingImage: dataUrl,
+              }));
+            }
+          } catch {
+            // no-op
+          }
+        }
+      })();
+    }
+  }, [updateFormData]);
 
   // Print all diagrams with clinician notes in a new window
   const handlePrintDiagrams = async () => {
@@ -67,10 +84,16 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
         try {
           const dataUrl = await section.ref.current.getImage();
           if (dataUrl) {
+            // Save pedigree diagram image to form data
+            updateFormData("medicalHistory", {
+              ...data,
+              pedigreeDrawingImage: dataUrl,
+            });
+            
             diagramImgHtml = `
-              <div style="margin-top: 12px;">
-                <h3 style="color: #555; font-size: 15px; margin-bottom: 8px; font-weight: 600;">${section.diagramLabel}</h3>
-                <img src="${dataUrl}" style="max-width: 100%; border: 1px solid #d1d5db; border-radius: 4px;" />
+              <div style="margin-top: 24px; margin-bottom: 24px;">
+                <p style="color: #333; font-size: 13px; margin: 0 0 12px; font-weight: 600;">Diagram:</p>
+                <img src="${dataUrl}" style="max-width: 100%; height: auto; border: 1px solid #d1d5db; border-radius: 4px;" />
               </div>
             `;
           }
@@ -82,13 +105,13 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
       // Only include the section if it has notes or a diagram
       if (noteText || diagramImgHtml) {
         const noteHtml = noteText
-          ? `<div style="margin-top: 8px; padding: 12px 16px; background: #f9fafb; border-left: 4px solid #ab1c1c; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #333; white-space: pre-wrap;">${noteText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
-          : `<p style="color: #999; font-style: italic; font-size: 13px; margin-top: 8px;">No notes recorded.</p>`;
+          ? `<div style="margin-top: 12px; margin-bottom: 12px; padding: 12px 0; font-size: 13px; line-height: 1.8; color: #333; white-space: pre-wrap;">${noteText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
+          : `<p style="color: #999; font-style: italic; font-size: 13px; margin: 12px 0;">No notes recorded.</p>`;
 
         sectionsHtml += `
-          <div style="page-break-inside: avoid; margin-bottom: 36px;">
-            <h2 style="color: #ab1c1c; font-size: 18px; margin-bottom: 4px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">${section.sectionTitle}</h2>
-            <p style="color: #666; font-size: 13px; margin: 0 0 4px; font-weight: 600;">Clinician\'s Notes:</p>
+          <div style="margin-bottom: 48px;">
+            <h2 style="color: #333; font-size: 16px; margin: 0 0 12px; font-weight: 600; border-bottom: 1px solid #d1d5db; padding-bottom: 8px;">${section.sectionTitle}</h2>
+            <p style="color: #555; font-size: 12px; margin: 0 0 8px; font-weight: 600;">Notes:</p>
             ${noteHtml}
             ${diagramImgHtml}
           </div>
@@ -96,31 +119,115 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
       }
     }
 
+    // Add pregnancy history section
+    const pregnancyText = data.pregnancyHistory?.trim() || "";
+    let pregnancyHtml = "";
+    if (pregnancyText) {
+      pregnancyHtml = `
+        <div style="margin-bottom: 48px;">
+          <h2 style="color: #333; font-size: 16px; margin: 0 0 12px; font-weight: 600; border-bottom: 1px solid #d1d5db; padding-bottom: 8px;">Pregnancy History</h2>
+          <div style="margin-top: 12px; padding: 12px 0; font-size: 13px; line-height: 1.8; color: #333; white-space: pre-wrap;">${pregnancyText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        </div>
+      `;
+    }
+
     printWindow.document.write(`
       <html>
         <head>
-          <title>Demographic Details - ${childName}</title>
+          <title>Child Assessment - ${childName}</title>
           <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            @page {
+              margin-top: 2in;
+              margin-bottom: 1.5in;
+              margin-left: 0.75in;
+              margin-right: 0.75in;
+            }
             @media print {
-              body { margin: 0; padding: 20px; }
+              body {
+                margin-top: 2in;
+                margin-bottom: 1.5in;
+                margin-left: 0.75in;
+                margin-right: 0.75in;
+                padding: 0;
+              }
               .no-print { display: none !important; }
               img { max-width: 100%; height: auto; object-fit: contain; page-break-inside: avoid; }
-              div { page-break-inside: avoid; }
+            }
+            html, body {
+              width: 100%;
+              height: 100%;
             }
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
               color: #333;
-              max-width: 900px;
-              margin: 0 auto;
-              padding: 40px;
+              font-size: 12px;
+              line-height: 1.6;
+            }
+            .header {
+              margin-bottom: 48px;
+              padding-bottom: 16px;
+              border-bottom: 1px solid #d1d5db;
+            }
+            .header p {
+              margin: 4px 0;
+              font-size: 13px;
+              color: #555;
+            }
+            .section {
+              margin-bottom: 48px;
+              page-break-inside: avoid;
+            }
+            .section h2 {
+              color: #333;
+              font-size: 16px;
+              margin: 0 0 12px 0;
+              font-weight: 600;
+              border-bottom: 1px solid #d1d5db;
+              padding-bottom: 8px;
+            }
+            .section p {
+              color: #555;
+              font-size: 12px;
+              margin: 0 0 8px 0;
+              font-weight: 600;
+            }
+            .notes {
+              margin-top: 12px;
+              padding: 12px 0;
+              font-size: 13px;
+              line-height: 1.8;
+              color: #333;
+              white-space: pre-wrap;
+            }
+            .diagram {
+              margin-top: 24px;
+              margin-bottom: 24px;
+            }
+            .diagram-label {
+              color: #333;
+              font-size: 13px;
+              margin: 0 0 12px 0;
+              font-weight: 600;
+            }
+            img {
+              max-width: 100%;
+              height: auto;
+              border: 1px solid #d1d5db;
+              border-radius: 4px;
             }
           </style>
         </head>
         <body>
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #ab1c1c; font-size: 24px; margin: 0;">Demographic Details</h1>
-            <p style="color: #666; margin: 8px 0 0;">Child: <strong>${childName}</strong> &nbsp;|&nbsp; Date: ${dateStr}</p>
+          <div class="header">
+            <p><strong>Child:</strong> ${childName}</p>
+            <p><strong>Date:</strong> ${dateStr}</p>
           </div>
+          ${pregnancyHtml}
           ${sectionsHtml}
           <script>
             window.onload = () => {
@@ -245,46 +352,16 @@ export default function Step8MedicalHistoryForm({ formData, updateFormData, sele
 
       {/* Pre-natal History */}
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Pre-natal History</label>
-        <p className="text-xs text-gray-500 mb-2">Pregnancy details (complications, medications, etc.)</p>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Pregnancy History</label>
+        <p className="text-xs text-gray-500 mb-2">Pre-natal (pregnancy details, complications, medications), Natal (birth conditions, term, delivery type, weight), and Post-natal (development after birth, milestones, early illnesses).</p>
         <textarea
-          name="prenatalHistory"
-          value={data.prenatalHistory || ""}
+          name="pregnancyHistory"
+          value={data.pregnancyHistory || ""}
           onChange={handleChange}
           disabled={readOnly}
-          rows="4"
+          rows="8"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
-          placeholder="Enter details here..."
-        ></textarea>
-      </div>
-
-      {/* Natal History */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Natal History</label>
-        <p className="text-xs text-gray-500 mb-2">Birth conditions (term, type of delivery, birth weight, complications, etc.)</p>
-        <textarea
-          name="natalHistory"
-          value={data.natalHistory || ""}
-          onChange={handleChange}
-          disabled={readOnly}
-          rows="4"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
-          placeholder="Enter details here..."
-        ></textarea>
-      </div>
-
-      {/* Post-natal History */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Post-natal History</label>
-        <p className="text-xs text-gray-500 mb-2">Development after birth (milestones, early illnesses, etc.)</p>
-        <textarea
-          name="postnatalHistory"
-          value={data.postnatalHistory || ""}
-          onChange={handleChange}
-          disabled={readOnly}
-          rows="4"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab1c1c] focus:outline-none bg-white"
-          placeholder="Enter details here..."
+          placeholder="Enter pregnancy history details (pre-natal, natal, post-natal) here..."
         ></textarea>
       </div>
 

@@ -5,7 +5,7 @@ const CaseHistory = require("../models/CaseHistory");
 const Child = require("../models/Child");
 const { logger } = require("../utils/logger");
 
-// ─── POST: Save new case history ───────────────────────────────────────────
+// ─── POST: Save new case history (one per child) ──────────────────────────
 router.post("/", auth, async (req, res) => {
   try {
     console.log("[CaseHistory] incoming payload", JSON.stringify(req.body, null, 2));
@@ -19,6 +19,15 @@ router.post("/", auth, async (req, res) => {
     const child = await Child.findById(childId);
     if (!child) {
       return res.status(404).json({ message: "Child not found" });
+    }
+
+    // Check if a case history already exists for this child
+    const existingHistory = await CaseHistory.findOne({ childId });
+    if (existingHistory) {
+      return res.status(409).json({ 
+        message: "A case history already exists for this child. Please edit the existing one instead.",
+        existingHistoryId: existingHistory._id 
+      });
     }
 
     // Create new case history

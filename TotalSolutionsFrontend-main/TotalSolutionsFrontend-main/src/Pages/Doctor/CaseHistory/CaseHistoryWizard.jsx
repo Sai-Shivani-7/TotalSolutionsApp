@@ -121,9 +121,8 @@ const initialFormData = {
     presentingComplaints: "",
     referredBy: "",
     generalHistory: "",
-    prenatalHistory: "",
-    natalHistory: "",
-    postnatalHistory: "",
+    pregnancyHistory: "",
+    pedigreeDrawingImage: "",
   },
 };
 
@@ -154,6 +153,7 @@ export default function CaseHistoryWizard() {
   const [savedHistories, setSavedHistories]   = useState([]);
   const [loadingHistories, setLoadingHistories] = useState(false);
   const [readOnlyHistory, setReadOnlyHistory] = useState(null);
+  const [isEditingMode, setIsEditingMode] = useState(false);
   const contentRef = useRef(null);
 
   // Keep doctor auth token from session storage. Do not override with child token.
@@ -258,6 +258,12 @@ export default function CaseHistoryWizard() {
 
     const demo = history.demographics || {};
     const docs = history.documentsChecklist || {};
+    
+    // Ensure new fields are included
+    const fatherOcc = demo.fatherOccupation || "";
+    const fatherQual = demo.fatherQualifications || "";
+    const motherOcc = demo.motherOccupation || "";
+    const motherQual = demo.motherQualifications || "";
 
     setFormData({
       ...initialFormData,
@@ -270,10 +276,14 @@ export default function CaseHistoryWizard() {
       fatherPhone: demo.fatherPhone || "",
       fatherWhatsApp: demo.fatherWhatsApp || "",
       fatherEmail: demo.fatherEmail || "",
+      fatherOccupation: fatherOcc,
+      fatherQualifications: fatherQual,
       motherName: demo.motherName || "",
       motherPhone: demo.motherPhone || "",
       motherWhatsApp: demo.motherWhatsApp || "",
       motherEmail: demo.motherEmail || "",
+      motherOccupation: motherOcc,
+      motherQualifications: motherQual,
       address: demo.address || "",
       preTherapyVideoRef: demo.preTherapyVideoRef || "",
       newTherapyAdded: demo.newTherapyAdded || "",
@@ -300,29 +310,57 @@ export default function CaseHistoryWizard() {
       visualShapes: history.visualShapes || initialFormData.visualShapes,
       assessmentNotes:
         history.assessmentNotes || initialFormData.assessmentNotes,
-      medicalHistory:
-        history.medicalHistory || initialFormData.medicalHistory,
+      medicalHistory: (() => {
+        const med = history.medicalHistory || {};
+
+        let pregnancyHistory = med.pregnancyHistory || "";
+        if (!pregnancyHistory) {
+          const parts = [];
+          if (med.prenatalHistory) parts.push(`Pre-natal: ${med.prenatalHistory}`);
+          if (med.natalHistory) parts.push(`Natal: ${med.natalHistory}`);
+          if (med.postnatalHistory) parts.push(`Post-natal: ${med.postnatalHistory}`);
+          pregnancyHistory = parts.join("\n\n");
+        }
+
+        return {
+          presentingComplaints: med.presentingComplaints || "",
+          referredBy: med.referredBy || "",
+          generalHistory: med.generalHistory || "",
+          pregnancyHistory,
+          pedigreeDrawingImage: med.pedigreeDrawingImage || "",
+        };
+      })(),
     });
   };
 
-  // ─── Load a saved history into the wizard ─────────────────────────────────
-  const handleViewHistory = (history) => {
-    setReadOnlyHistory(history);
+  // ─── Load a saved history into the wizard for editing ─────────────────────
+  const handleEditHistory = () => {
+    if (!readOnlyHistory) return;
+    setIsEditingMode(true);
     setCurrentStep(0);
     setVisitedSteps(new Set([0]));
-    loadHistoryIntoForm(history);
-    toast.info("Viewing previous case history in read-only mode.");
+    loadHistoryIntoForm(readOnlyHistory);
+    toast.info("Editing case history. Changes will update the existing record.");
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingMode(false);
+    setCurrentStep(0);
+    setVisitedSteps(new Set([0]));
+    if (readOnlyHistory) {
+      loadHistoryIntoForm(readOnlyHistory);
+    }
+    toast.info("Edit cancelled.");
   };
 
   const handleAddCaseHistory = () => {
     setReadOnlyHistory(null);
+    setIsEditingMode(false);
     setFormData(initialFormData);
     setCurrentStep(0);
     setVisitedSteps(new Set([0]));
     toast.info("Fill the form to add a new case history.");
   };
-
-  const isReadOnlyMode = !!readOnlyHistory;
 
   const formatYesNo = (value) => (value ? "Yes" : "No");
 
@@ -333,173 +371,110 @@ export default function CaseHistoryWizard() {
     </div>
   );
 
-  // ─── PDF generation ───────────────────────────────────────────────────────
+  // ─── PDF generation - Downloads Child demographics + medical history/diagram ─────
   const handleGeneratePDF = (history) => {
     try {
       const doc = new jsPDF("p", "pt", "a4");
       const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 40;
-      let y = 40;
-
-      doc.setFontSize(22); doc.setTextColor(171, 28, 28);
-      doc.text("Total Solutions", pageWidth / 2, y, { align: "center" }); y += 20;
-      doc.setFontSize(16); doc.setTextColor(50, 50, 50);
-      doc.text("Case History Report", pageWidth / 2, y, { align: "center" }); y += 30;
-
-      const addSection = (title) => {
-        if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 40; }
-        doc.setFontSize(14); doc.setTextColor(171, 28, 28);
-        doc.text(title, margin, y); y += 8;
-        doc.setDrawColor(200, 200, 200);
-        doc.line(margin, y, pageWidth - margin, y); y += 20;
-      };
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginLeft = 40;
+      const marginRight = 40;
+      const topMargin = 144;   // 2 inches
+      const bottomMargin = 108; // 1.5 inches
+      let y = topMargin;
 
       const demo = history.demographics || {};
-      addSection("Child Information");
-      doc.autoTable({
-        startY: y,
-        body: [
-          ["Child Name", demo.childName || selectedChild?.name, "DOB", demo.dob || "N/A"],
-          ["Therapist", demo.therapistName || "N/A", "Joined", demo.dateOfJoining || "N/A"],
-          ["Father", demo.fatherName || "N/A", "Father Phone", demo.fatherPhone || "N/A"],
-          ["Mother", demo.motherName || "N/A", "Mother Phone", demo.motherPhone || "N/A"],
-          ["Address", demo.address || "N/A", "", ""],
-        ],
-        theme: "plain",
-        styles: { fontSize: 10, cellPadding: 4 },
-        columnStyles: { 0: { fontStyle: "bold", cellWidth: 100 }, 2: { fontStyle: "bold", cellWidth: 100 } },
-        margin: { left: margin, right: margin },
-      });
-      y = doc.lastAutoTable.finalY + 30;
-
-      const docs = history.documentsChecklist || {};
-      addSection("Documents Checklist");
-      doc.autoTable({
-        startY: y,
-        body: [
-          ["Consultation Paper", docs.consultationPaper ? "✓" : "✗", "Previous Medical Docs", docs.previousMedicalDocs ? "✓" : "✗"],
-          ["Test Reports", docs.testReports ? "✓" : "✗", "Consent Form", docs.consentForm ? "✓" : "✗"],
-          ["Therapy Change", docs.therapyChange ? "✓" : "✗", "Therapist Change", docs.therapistChange ? "✓" : "✗"],
-          ["Food Allergy", docs.foodAllergy ? "✓" : "✗", "Parent Concerns", docs.parentConcerns ? "✓" : "✗"],
-        ],
-        theme: "grid",
-        styles: { fontSize: 10, cellPadding: 4 },
-        columnStyles: { 0: { fontStyle: "bold", fillColor: [249, 250, 251] }, 2: { fontStyle: "bold", fillColor: [249, 250, 251] } },
-        margin: { left: margin, right: margin },
-      });
-      y = doc.lastAutoTable.finalY + 30;
-
-      const ibp = history.increasingBehaviourPlan || {};
-      if (ibp.longTermGoal || (ibp.shortTermGoals && ibp.shortTermGoals.some(g => g.text))) {
-        addSection("Increasing Behaviour Plan");
-        if (ibp.longTermGoal) { doc.setFontSize(10); doc.text(`Long Term Goal: ${ibp.longTermGoal}`, margin, y); y += 20; }
-        const goals = (ibp.shortTermGoals || []).filter(g => g.text);
-        if (goals.length) {
-          doc.autoTable({
-            startY: y,
-            head: [["Short Term Goal", "Month 1", "Month 2", "Month 3"]],
-            body: goals.map(g => [g.text, g.month1 || "-", g.month2 || "-", g.month3 || "-"]),
-            theme: "grid",
-            headStyles: { fillColor: [171, 28, 28], textColor: 255 },
-            styles: { fontSize: 10 },
-            margin: { left: margin, right: margin },
-          });
-          y = doc.lastAutoTable.finalY + 30;
-        }
-      }
-
-      const dbp = history.decreasingBehaviourPlan || {};
-      if (dbp.rows && dbp.rows.some(r => r.month1 || r.month2 || r.month3)) {
-        addSection("Decreasing Behaviour Plan");
-        doc.autoTable({
-          startY: y,
-          head: [["Behaviour Type", "Month 1", "Month 2", "Month 3"]],
-          body: dbp.rows.map(r => [r.type, r.month1 || "-", r.month2 || "-", r.month3 || "-"]),
-          theme: "grid",
-          headStyles: { fillColor: [171, 28, 28], textColor: 255 },
-          styles: { fontSize: 10 },
-          margin: { left: margin, right: margin },
-        });
-        y = doc.lastAutoTable.finalY + 30;
-      }
-
-      const trials = history.trialExamination || {};
-      if (trials.trials && trials.trials.some(t => t.promptUsed)) {
-        addSection("Trial Examination");
-        if (trials.targetBehaviour) { doc.setFontSize(10); doc.text(`Target: ${trials.targetBehaviour}`, margin, y); y += 20; }
-        doc.autoTable({
-          startY: y,
-          head: [["Trial", "Prompt Used", "Max Score", "Achieved Score"]],
-          body: trials.trials.map((t, i) => [`Trial ${i + 1}`, t.promptUsed || "-", t.maxScore || "0", t.achievedScore || "0"]),
-          theme: "grid",
-          headStyles: { fillColor: [171, 28, 28], textColor: 255 },
-          styles: { fontSize: 10 },
-          margin: { left: margin, right: margin },
-        });
-        y = doc.lastAutoTable.finalY + 15;
-        doc.setFont(undefined, "bold");
-        doc.text(`Total: ${trials.totalScore || 0}   Percentage: ${trials.percentage || 0}%`, margin, y);
-        doc.setFont(undefined, "normal"); y += 30;
-      }
-
-      const notes = history.assessmentNotes || {};
-      addSection("Assessment Notes");
-      doc.autoTable({
-        startY: y,
-        body: [
-          ["Cylinder", notes.cylinderResult || "N/A"],
-          ["Cube", notes.cubeResult || "N/A"],
-          ["Rectangle Response", notes.rectangleResponse || "N/A"],
-          ["Assessment Date", notes.assessmentDate || "N/A"],
-        ],
-        theme: "grid",
-        styles: { fontSize: 10, cellPadding: 4 },
-        columnStyles: { 0: { fontStyle: "bold", cellWidth: 150, fillColor: [249, 250, 251] } },
-        margin: { left: margin, right: margin },
-      });
-      y = doc.lastAutoTable.finalY + 20;
-
-      if (notes.therapistNotes) {
-        doc.setFont(undefined, "bold"); doc.text("Therapist Notes:", margin, y); y += 12;
-        doc.setFont(undefined, "normal");
-        const split = doc.splitTextToSize(notes.therapistNotes, pageWidth - margin * 2);
-        doc.text(split, margin, y); y += split.length * 12 + 15;
-      }
-
       const med = history.medicalHistory || {};
-      if (med.generalHistory || med.prenatalHistory || med.natalHistory || med.postnatalHistory) {
-        addSection("Medical / Demographic History");
-        [["General History", med.generalHistory], ["Pre-natal History", med.prenatalHistory],
-         ["Natal History", med.natalHistory], ["Post-natal History", med.postnatalHistory]]
-          .filter(([, v]) => v)
-          .forEach(([label, value]) => {
-            if (y > doc.internal.pageSize.getHeight() - 80) { doc.addPage(); y = 40; }
-            doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.text(label, margin, y); y += 14;
-            doc.setFont(undefined, "normal"); doc.setFontSize(10);
-            const lines = doc.splitTextToSize(value, pageWidth - margin * 2);
-            doc.text(lines, margin, y); y += lines.length * 12 + 15;
-          });
+
+      const addPageLine = (text, x, lineHeight = 16) => {
+        if (y > pageHeight - bottomMargin - lineHeight) {
+          doc.addPage();
+          y = topMargin;
+        }
+        doc.text(text, x, y);
+        y += lineHeight;
+      };
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+
+      // Child demographics only
+      addPageLine(`Child Name: ${demo.childName || "-"}`, marginLeft);
+      addPageLine(`Date of Birth: ${demo.dob || "-"}`, marginLeft);
+      addPageLine(`Age: ${calculateAge(demo.dob) || "-"}`, marginLeft);
+      addPageLine(`Date of Meeting: ${demo.dateOfJoining || "-"}`, marginLeft);
+      addPageLine(`Therapist Name: ${demo.therapistName || "-"}`, marginLeft);
+      addPageLine(`Centre: ${demo.centre || "-"}`, marginLeft);
+
+      addPageLine("", marginLeft);
+      addPageLine("Father Information", marginLeft);
+      addPageLine(`Name: ${demo.fatherName || "-"}`, marginLeft);
+      addPageLine(`Phone: ${demo.fatherPhone || "-"}`, marginLeft);
+      addPageLine(`Email: ${demo.fatherEmail || "-"}`, marginLeft);
+      addPageLine(`Occupation: ${demo.fatherOccupation || "-"}`, marginLeft);
+      addPageLine(`Qualifications: ${demo.fatherQualifications || "-"}`, marginLeft);
+
+      addPageLine("", marginLeft);
+      addPageLine("Mother Information", marginLeft);
+      addPageLine(`Name: ${demo.motherName || "-"}`, marginLeft);
+      addPageLine(`Phone: ${demo.motherPhone || "-"}`, marginLeft);
+      addPageLine(`Email: ${demo.motherEmail || "-"}`, marginLeft);
+      addPageLine(`Occupation: ${demo.motherOccupation || "-"}`, marginLeft);
+      addPageLine(`Qualifications: ${demo.motherQualifications || "-"}`, marginLeft);
+
+      if (demo.address) {
+        addPageLine("", marginLeft);
+        addPageLine(`Address: ${demo.address}`, marginLeft);
       }
 
-      // Page numbers
-      const pages = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pages; i++) {
-        doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150, 150, 150);
-        doc.text(`Page ${i} of ${pages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 20, { align: "center" });
+      if (med.presentingComplaints) {
+        addPageLine("", marginLeft);
+        addPageLine("Presenting Complaints:", marginLeft);
+        const lines = doc.splitTextToSize(med.presentingComplaints, pageWidth - marginLeft - marginRight);
+        lines.forEach((line) => addPageLine(line, marginLeft));
+      }
+
+      if (med.pregnancyHistory) {
+        addPageLine("", marginLeft);
+        addPageLine("Pregnancy History:", marginLeft);
+        const lines = doc.splitTextToSize(med.pregnancyHistory, pageWidth - marginLeft - marginRight);
+        lines.forEach((line) => addPageLine(line, marginLeft));
+      }
+
+      if (med.pedigreeDrawingImage) {
+        if (y > pageHeight - bottomMargin - 220) {
+          doc.addPage();
+          y = topMargin;
+        }
+        const imageWidth = pageWidth - marginLeft - marginRight;
+        const imageHeight = 220;
+        doc.addImage(med.pedigreeDrawingImage, "PNG", marginLeft, y, imageWidth, imageHeight);
+        y += imageHeight + 10;
+      }
+
+      // page numbering (bottom center)
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 40, { align: "center" });
       }
 
       doc.save(`CaseHistory_${(selectedChild?.name || "Patient").replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
-      toast.success("PDF generated!");
+      toast.success("PDF generated! (Child demographics + history)");
     } catch (err) {
       console.error("PDF error:", err);
-      toast.error("Failed to generate PDF.");
+      toast.error("Failed to generate PDF: " + err.message);
     }
   };
 
   const handleClearChild = () => {
-    setSelectedChild(null);
     setSearchQuery("");
     setSavedHistories([]);
+    setReadOnlyHistory(null);
+    setIsEditingMode(false);
     setFormData(initialFormData);
     setCurrentStep(0);
     setVisitedSteps(new Set([0]));
@@ -522,7 +497,7 @@ export default function CaseHistoryWizard() {
   const handleNext     = useCallback(() => goToStep(currentStep + 1), [currentStep, goToStep]);
   const handlePrevious = useCallback(() => goToStep(currentStep - 1), [currentStep, goToStep]);
 
-  // ─── SAVE — sends everything to backend ───────────────────────────────────
+  // ─── SAVE — sends everything to backend (creates or updates) ────────────────
   const handleSave = useCallback(async () => {
     if (!selectedChild) {
       toast.error("Please select a child before saving.");
@@ -542,10 +517,14 @@ export default function CaseHistoryWizard() {
           fatherPhone:        formData.fatherPhone,
           fatherWhatsApp:     formData.fatherWhatsApp,
           fatherEmail:        formData.fatherEmail,
+          fatherOccupation:   formData.fatherOccupation,
+          fatherQualifications: formData.fatherQualifications,
           motherName:         formData.motherName,
           motherPhone:        formData.motherPhone,
           motherWhatsApp:     formData.motherWhatsApp,
           motherEmail:        formData.motherEmail,
+          motherOccupation:   formData.motherOccupation,
+          motherQualifications: formData.motherQualifications,
           address:            formData.address,
           preTherapyVideoRef: formData.preTherapyVideoRef,
           newTherapyAdded:    formData.newTherapyAdded,
@@ -569,21 +548,40 @@ export default function CaseHistoryWizard() {
         trialExamination:        formData.trialExamination,
         visualShapes:            formData.visualShapes,
         assessmentNotes:         formData.assessmentNotes,
-        medicalHistory:          formData.medicalHistory,
+        medicalHistory: {
+          presentingComplaints: formData.medicalHistory.presentingComplaints || "",
+          referredBy:           formData.medicalHistory.referredBy || "",
+          generalHistory:       formData.medicalHistory.generalHistory || "",
+          pregnancyHistory:     formData.medicalHistory.pregnancyHistory || "",
+          pedigreeDrawingImage: formData.medicalHistory.pedigreeDrawingImage || "",
+        },
       };
 
-      await axios.post("/api/cases", payload);
-      toast.success("Case history saved successfully!");
-      // Refresh history list then clear
+      if (readOnlyHistory && isEditingMode) {
+        // Update existing case history
+        await axios.put(`/api/cases/${readOnlyHistory._id}`, payload);
+        toast.success("Case history updated successfully!");
+      } else if (!readOnlyHistory) {
+        // Create new case history
+        await axios.post("/api/cases", payload);
+        toast.success("Case history created successfully!");
+      }
+      
+      // Refresh history list then show view mode
       await fetchSavedHistories(selectedChild._id);
-      handleClearChild();
+      setIsEditingMode(false);
+      // Do NOT clear child - show the read-only view instead
     } catch (err) {
       console.error(err.response?.data || err.message);
-      toast.error(err.response?.data?.message || "Failed to save case history.");
+      if (err.response?.status === 409) {
+        toast.error("A case history already exists for this child.");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to save case history.");
+      }
     } finally {
       setIsSaving(false);
     }
-  }, [formData, selectedChild]);
+  }, [formData, selectedChild, readOnlyHistory, isEditingMode]);
 
   // ─── Keyboard navigation ──────────────────────────────────────────────────
   useEffect(() => {
@@ -692,90 +690,82 @@ export default function CaseHistoryWizard() {
 
         {selectedChild ? (
           <>
-            {isReadOnlyMode && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+            {isEditingMode && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-yellow-800">Read-only mode is active.</p>
-                    <p className="text-xs text-yellow-700">Navigate through the 8-step form. Values are non-editable.</p>
+                    <p className="text-sm font-semibold text-blue-800">✎ Editing Mode</p>
+                    <p className="text-xs text-blue-700">You are editing the existing case history. Your changes will update the record.</p>
                   </div>
                   <button
-                    onClick={handleAddCaseHistory}
-                    className="text-xs px-3 py-1.5 bg-[#ab1c1c] text-white rounded hover:bg-[#8e1818]"
+                    onClick={handleCancelEdit}
+                    className="text-xs px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700"
                   >
-                    Add New Case History
+                    Cancel Edit
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── Past case histories ── */}
-            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                {savedHistories.map((h, idx) => (
-                  <button
-                    key={h._id || idx}
-                    onClick={() => handleViewHistory(h)}
-                    className={`text-xs px-3 py-1.5 rounded-full border ${readOnlyHistory?._id === h._id ? "border-[#ab1c1c] bg-[#ab1c1c] text-white" : "border-gray-300 text-gray-700 hover:bg-gray-100"}`}
-                  >
-                    CaseHistory {idx + 1}
-                  </button>
-                ))}
-                <button
-                  onClick={handleAddCaseHistory}
-                  className="text-xs px-3 py-1.5 rounded-full bg-[#ab1c1c] text-white hover:bg-[#8e1818]"
-                >
-                  Add Case History
-                </button>
-              </div>
-
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Past Case Histories for {selectedChild.name}
-              </h3>
-              {loadingHistories ? (
-                <p className="text-sm text-gray-400">Loading...</p>
-              ) : savedHistories.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No past histories found.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-600 uppercase bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3">Summary</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {savedHistories.map((h, idx) => (
-                        <tr key={h._id || idx} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium text-gray-800">
-                            {h.createdAt ? new Date(h.createdAt).toLocaleDateString() : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">
-                            {h.trialExamination?.percentage != null
-                              ? `Trials: ${h.trialExamination.percentage}%`
-                              : "No summary"}
-                          </td>
-                          <td className="px-4 py-3 text-right flex gap-3 justify-end">
-                            <button onClick={() => handleViewHistory(h)} className="text-[#ab1c1c] hover:underline font-medium text-xs">View</button>
-                            <button onClick={() => handleGeneratePDF(h)} className="text-gray-500 hover:text-gray-800 font-medium text-xs">PDF</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="mt-3 flex items-center gap-2">
-                    <hr className="flex-1 border-gray-200" />
-                    <span className="text-xs text-gray-400">or fill form below</span>
-                    <hr className="flex-1 border-gray-200" />
+            {/* ── View Mode: Display full 8-page uneditable history ── */}
+            {readOnlyHistory && !isEditingMode && (
+              <div className="space-y-6">
+                {/* Action Header */}
+                <div className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-800">Case History: {selectedChild.name}</h2>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Created: {readOnlyHistory.createdAt ? new Date(readOnlyHistory.createdAt).toLocaleDateString() : "—"} | 
+                      Updated: {readOnlyHistory.updatedAt ? new Date(readOnlyHistory.updatedAt).toLocaleDateString() : "—"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleEditHistory}
+                      className="px-4 py-2 bg-[#ab1c1c] text-white rounded-lg hover:bg-[#8e1818] font-medium text-sm"
+                    >
+                      ✎ Edit
+                    </button>
+                    <button
+                      onClick={() => handleGeneratePDF(readOnlyHistory)}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium text-sm"
+                    >
+                      📄 PDF
+                    </button>
+                    <button
+                      onClick={handleClearChild}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium text-sm"
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {true && (
+                {/* All 8 Pages Uneditable */}
+                <div className="bg-white rounded-lg shadow-md p-6 space-y-8">
+                  {STEPS.map((step, idx) => {
+                    const StepComp = step.component;
+                    return (
+                      <div key={idx} className="border-b pb-8 last:border-b-0">
+                        <h3 className="text-lg font-bold text-[#ab1c1c] mb-4">{idx + 1}. {step.label}</h3>
+                        <StepComp
+                          formData={formData}
+                          updateFormData={() => {}}
+                          selectedChild={selectedChild}
+                          readOnly={true}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Form Mode: Show 8-step form (for creating or editing) ── */}
+            {!readOnlyHistory || isEditingMode ? (
               <>
+
+
                 {/* ── Step Indicator ── */}
                 <div className="mb-6">
                   {/* Desktop */}
@@ -826,56 +816,74 @@ export default function CaseHistoryWizard() {
                     formData={formData}
                     updateFormData={updateFormData}
                     selectedChild={selectedChild}
-                    readOnly={isReadOnlyMode}
+                    readOnly={false}
                   />
                 </div>
 
                 {/* ── Navigation ── */}
-              </>
-            )}
-            <div className="flex justify-between items-center">
-              <button
-                onClick={handleClearChild}
-                className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <div className="flex gap-3">
-                <button
-                  onClick={handlePrevious}
-                  disabled={isFirstStep}
-                  className={`px-4 sm:px-6 py-2 rounded-lg transition-colors ${
-                    isFirstStep ? "border border-gray-200 text-gray-300 cursor-not-allowed" :
-                    "border border-[#ab1c1c] text-[#ab1c1c] hover:bg-red-50"}`}
-                >
-                  ← Previous
-                </button>
-                {!isLastStep ? (
-                  <button onClick={handleNext}
-                    className="px-4 sm:px-6 py-2 bg-[#ab1c1c] text-white rounded-lg hover:bg-[#8e1818] transition-colors">
-                    Next →
+                <div className="flex justify-between items-center mb-4">
+                  <button
+                    onClick={handleClearChild}
+                    className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Cancel
                   </button>
-                ) : (
-                  isReadOnlyMode ? (
-                    <button onClick={handleAddCaseHistory} className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                      Exit Read-only
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handlePrevious}
+                      disabled={isFirstStep}
+                      className={`px-4 sm:px-6 py-2 rounded-lg transition-colors ${
+                        isFirstStep ? "border border-gray-200 text-gray-300 cursor-not-allowed" :
+                        "border border-[#ab1c1c] text-[#ab1c1c] hover:bg-red-50"}`}
+                    >
+                      ← Previous
                     </button>
-                  ) : (
-                    <button onClick={handleSave} disabled={isSaving}
-                      className={`px-4 sm:px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
-                        isSaving ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
-                      {isSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                      {isSaving ? "Saving..." : "Save"}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
+                    {!isLastStep ? (
+                      <button onClick={handleNext}
+                        className="px-4 sm:px-6 py-2 bg-[#ab1c1c] text-white rounded-lg hover:bg-[#8e1818] transition-colors">
+                        Next →
+                      </button>
+                    ) : (
+                      isEditingMode ? (
+                        <button 
+                          onClick={handleSave} 
+                          disabled={isSaving}
+                          className={`px-4 sm:px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
+                            isSaving ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
+                          {isSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                          {isSaving ? "Updating..." : "Update Case History"}
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={handleSave} 
+                          disabled={isSaving}
+                          className={`px-4 sm:px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
+                            isSaving ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
+                          {isSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                          {isSaving ? "Saving..." : "Create Case History"}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
 
-            <div className="text-center text-sm text-gray-400 mt-4">
-              Step {currentStep + 1} of {STEPS.length}
-              <span className="hidden sm:inline ml-3 text-xs">(Alt + ← → to navigate)</span>
-            </div>
+                <div className="text-center text-sm text-gray-400">
+                  Step {currentStep + 1} of {STEPS.length}
+                  <span className="hidden sm:inline ml-3 text-xs">(Alt + ← → to navigate)</span>
+                </div>
+              </>
+            ) : (
+              !loadingChildren && (
+                <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                  <div className="text-5xl mb-4">👶</div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Select a Child to Begin</h3>
+                  <p className="text-sm text-gray-500">Search and select a child from the dropdown above.</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    No children in the list? Make sure you have added children via the backend seed or API.
+                  </p>
+                </div>
+              )
+            )}
           </>
         ) : (
           !loadingChildren && (
